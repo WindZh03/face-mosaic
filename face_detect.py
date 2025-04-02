@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 
 
-def do_mosaic(img, x, y, w, h, neighbor=100):
+def do_mosaic(img, x, y, w, h, neighbor=50):
 
     # 打码部分
     for i in range(0, h, neighbor):
@@ -42,7 +42,7 @@ def add_icon(img, x, y, w, h):
 
 
 
-def face_detect(img, type='masaic'):
+def face_detect(img, type='mosaic'):
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     face_detector = cv.CascadeClassifier(r"./frontalface.xml")
@@ -51,8 +51,8 @@ def face_detect(img, type='masaic'):
     if len(faces) > 0:
         img_mosaic = img
         for x, y, w, h in faces:
-            if type == 'masaic':
-                img_mosaic = do_mosaic(img_mosaic, x, y, w, h, neighbor=15)
+            if type == 'mosaic':
+                img_mosaic = do_mosaic(img_mosaic, x, y, w, h)
             if type == 'icon':
                 img_mosaic = add_icon(img_mosaic, x, y, w, h)
         return img_mosaic
@@ -61,9 +61,9 @@ def face_detect(img, type='masaic'):
     
 
 
-def face_blurring(file_path, type):
+def video_blurring(video_path, type):
 
-    cap = cv.VideoCapture(file_path)
+    cap = cv.VideoCapture(video_path)
     
     # 获取视频的宽度、高度和帧率
     width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
@@ -72,7 +72,7 @@ def face_blurring(file_path, type):
 
     # 创建 VideoWriter 对象
     fourcc = cv.VideoWriter_fourcc(*'XVID')  # 使用 XVID 编码
-    out = cv.VideoWriter('output_video.avi', fourcc, fps, (width, height))
+    out = cv.VideoWriter('./output/output_video.mp4', fourcc, fps, (width, height))
 
     total_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))  # 获取总帧数
     with tqdm(total=total_frames, desc="Processing Frames") as pbar:  # 初始化进度条
@@ -80,10 +80,10 @@ def face_blurring(file_path, type):
             flag, frame = cap.read()
             if not flag:
                 break
-            face_detect(frame,type)
+            edited_frame = face_detect(frame,type)
             
             # 将处理后的帧写入视频文件
-            out.write(frame)
+            out.write(edited_frame)
             pbar.update(1)  # 更新进度条
 
             if ord('q') == cv.waitKey(10):
@@ -94,10 +94,25 @@ def face_blurring(file_path, type):
     cap.release()
 
 
+
+def image_blurring(image_path, type):
+    img = cv.imread(image_path)
+    edited_frame = face_detect(img, type)
+    
+    cv.imwrite('./output/output_image.jpg', edited_frame)
+    cv.destroyAllWindows()
+
+
+
+
+
 if __name__ == '__main__':
     
-    file_path = "/home/robo/zhao_code/github/face-mosaic/src/test1.mp4"
-    # type = 'mosaic'
-    type = 'icon'
-    
-    face_blurring(file_path, type)
+    video_path = "/home/robo/zhao_code/github/face-mosaic/src/test1.mp4"
+    type = 'mosaic'
+    # type = 'icon'
+    video_blurring(video_path, type)
+
+    image_path = "/home/robo/zhao_code/github/face-mosaic/src/test1.jpg"
+    type = 'mosaic'
+    # image_blurring(image_path, type)
